@@ -41,6 +41,8 @@ public class PuzzlesforSafety extends JFrame {
 	//problem panel
 	JTextField answer;
 	JButton submit;
+	JButton retry;
+	
 	private JButton startStop;
 	private JTextField location;
 	private JButton enterLocation;
@@ -64,10 +66,8 @@ public class PuzzlesforSafety extends JFrame {
 	private JLabel questionLabel;
 	private String question;
 	private String correctAnswer;
-
-	private boolean emailSend = true;
 	
-	private int alternating = 1;
+	private boolean emailSend = false;
 
 	private JLabel incorrectAnswerLabel = new JLabel("Sorry that answer is not correct, try again.");
 	private JLabel correctAnswerLabel = new JLabel("     Correct!     ");
@@ -122,7 +122,7 @@ public class PuzzlesforSafety extends JFrame {
 		//Buttons and textFields and what not
 		startStop = new JButton("Start Sobriety Tracker!");
 		location = new JTextField("<Location>");
-		JLabel locationMarker = new JLabel("My location is/will be: ");
+		locationMarker = new JLabel("My location is/will be: ");
 		enterLocation = new JButton("Enter Locaton");
 		timeLabel = new JLabel("How often should we check in on you? ");
 		times = new JComboBox<String>(timesAvailable);
@@ -132,7 +132,7 @@ public class PuzzlesforSafety extends JFrame {
 		name = new JTextField("<Name>");
 		every = new JLabel("Check in every ");
 		namee = new JLabel("What is your name?");
-
+		
 
 
 		//buttons/fields
@@ -141,12 +141,14 @@ public class PuzzlesforSafety extends JFrame {
 		instructionsAnswer3 = new JLabel("your selected person will be notified of your situation.");
 		answer = new JTextField(7);
 		submit = new JButton("Submit Answer");
+		retry = new JButton("Try Again");
 
 		problemPanel.add(instructionsAnswer);
 		problemPanel.add(answer);
 		problemPanel.add(submit);
 		answer.setVisible(false);
 		submit.setVisible(false);
+		retry.setVisible(false);
 
 
 		//Setting the font
@@ -191,6 +193,7 @@ public class PuzzlesforSafety extends JFrame {
 		//adding action listeners
 		startStop.addActionListener(new StartTrackerListener());
 		submit.addActionListener(new SubmitListener());
+		retry.addActionListener(new retryListener());
 
 		problemPanel.add(instructionsAnswer2);
 		problemPanel.add(instructionsAnswer3);
@@ -216,12 +219,12 @@ public class PuzzlesforSafety extends JFrame {
 		incorrectAnswerLabel.setForeground(Color.RED);
 		problemPanel.add(incorrectAnswerLabel);
 		incorrectAnswerLabel.setVisible(false);
-
+		
 		correctAnswerLabel.setFont(basic3);
 		correctAnswerLabel.setForeground(Color.GREEN);
 		problemPanel.add(correctAnswerLabel);
 		correctAnswerLabel.setVisible(false);
-
+		
 		attemptsRemaining.setFont(basic3);
 		problemPanel.add(attemptsRemaining);
 		attemptsRemaining.setVisible(false);
@@ -232,8 +235,11 @@ public class PuzzlesforSafety extends JFrame {
 	private class StartTrackerListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
+			
+			
 			time = Integer.parseInt(times.getSelectedItem().toString().trim()) * 60000;
 			buttons.removeAll();
+			//problemPanel.removeAll();
 
 
 			thanks = new JLabel("Thank you! We Will check on you in " + (time/60000) + " minute(s).");
@@ -242,7 +248,13 @@ public class PuzzlesforSafety extends JFrame {
 			Font basic2 = new Font("Palatino", Font.BOLD, 50);
 			thanks2.setFont(basic2);
 			thanks.setFont(basic);
+			
+			
 
+			instructionsAnswer.setVisible(true);
+			answer.setVisible(true);
+			submit.setVisible(true);
+			
 			buttons.add(thanks);
 			buttons.add(thanks2);
 
@@ -262,14 +274,9 @@ public class PuzzlesforSafety extends JFrame {
 				attemptsRemaining.setVisible(false);
 				incorrectAnswerLabel.setVisible(false);
 				correctAnswerLabel.setVisible(true);
-				emailSend = false;
-				questionLabel.setText("Thank You! We will contact you again in " + time/60000 + " minute(s).");
-				questionLabel.setFont(new Font("Palatino", Font.BOLD, 18));
-				new Timer().schedule(new showQuestionTask(), time);
-				answer.setText("");
-				problemPanel.setVisible(false);
 			}
 			else {
+				answer.setText("");
 				if (attempts > 1) {
 					incorrectAnswerLabel.setVisible(true);
 					attempts --;
@@ -280,7 +287,7 @@ public class PuzzlesforSafety extends JFrame {
 					}
 				}
 				else {
-
+					
 					try {
 						message = (name.getText().trim() + " has indicated to contact you if they do not respond correctly or in a timely manner to a safety prompt. They have set their location at/to " + (location.getText().trim()) + ". Please check up on " + (name.getText().trim()) + ".");
 						System.out.println(message);
@@ -288,10 +295,15 @@ public class PuzzlesforSafety extends JFrame {
 						Email email = new Email(inputEmail.getText().toString().trim(), "Puzzles for Safety: Automated Message", message);
 						email.send();
 						questionLabel.setText("Email Sent!");
+						
+						problemPanel.removeAll();
+						problemPanel.add(retry);
+						retry.setVisible(true);
+						problemPanel.validate();
+						problemPanel.repaint();
+						
 						attempts --;
 						attemptsRemaining.setText("Attempts Remaining: " + attempts);
-						emailSend = false;
-
 					} catch (MessagingException e1) {
 						e1.printStackTrace();
 					}
@@ -299,57 +311,79 @@ public class PuzzlesforSafety extends JFrame {
 			}
 		}
 	}
+	
+	private class retryListener implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			problemPanel.removeAll();
+			buttons.removeAll();
+			
+			problemPanel.add(instructionsAnswer);
+			problemPanel.add(instructionsAnswer2);
+			problemPanel.add(instructionsAnswer3);
+
+			//buttons
+			buttons.add(locationMarker);
+			buttons.add(location);
+			buttons.add(timeLabel);
+			buttons.add(every);
+			buttons.add(times);
+			buttons.add(minutes);
+			buttons.add(recipient);
+			buttons.add(inputEmail);
+			buttons.add(namee);
+			buttons.add(name);
+			buttons.add(startStop);
+			
+			problemPanel.validate();
+			problemPanel.repaint();
+			buttons.validate();
+			buttons.repaint();
+			
+		}
+		
+	}
 
 	class showQuestionTask extends TimerTask {
 
 		public void run() {
-			problemPanel.setVisible(true);
-			correctAnswerLabel.setVisible(false);
 			instructionsAnswer.setVisible(true);
 			instructionsAnswer2.setVisible(true);
 			instructionsAnswer3.setVisible(true);
 			submit.setVisible(true);
 			answer.setVisible(true);
-
-			Questions q1 = new Questions("easy", alternating);
+			
+			Questions q1 = new Questions("easy");
 			question = q1.getQuestion();
 			correctAnswer = q1.getAnswer();
-
+			
 			buttons.removeAll();
-
+			
 			questionLabel = new JLabel();
 			questionLabel.setText(question);
 			Font basic = new Font("Palatino", Font.BOLD, 50);
 			questionLabel.setFont(basic);
 			buttons.add(questionLabel);
-
+			
 			buttons.validate();
 			buttons.repaint();
-
+			
 			questionLabel.setVisible(true);
-
+			
 			Timer sendEmail = new Timer();
 			sendEmail.schedule(new sendEmailTask(), 10 * 60000);
-			
-			if (alternating == 1) {
-				alternating = 2;
-			}
-			else {
-				alternating = 1;
-			}
 		}
 	}
 
 	class sendEmailTask extends TimerTask {
 
 		public void run() {
-			if (emailSend) {
-				try {
-					email.send();
-				} 
-				catch (MessagingException e) {
-					e.printStackTrace();
-				}
+			try {
+				email.send();
+			} 
+			catch (MessagingException e) {
+				e.printStackTrace();
 			}
 		}
 	}
