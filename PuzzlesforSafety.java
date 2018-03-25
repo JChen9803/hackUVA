@@ -224,6 +224,7 @@ public class PuzzlesforSafety extends JFrame {
 		
 		
 		end.setVisible(false);
+		title.setHorizontalAlignment(problemPanel.WIDTH/2);
 
 		problemPanel.add(instructionsAnswer2);
 		problemPanel.add(instructionsAnswer3);
