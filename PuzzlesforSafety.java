@@ -66,8 +66,10 @@ public class PuzzlesforSafety extends JFrame {
 	private JLabel questionLabel;
 	private String question;
 	private String correctAnswer;
+
+	private boolean emailSend = true;
 	
-	private boolean emailSend = false;
+	private int alternating = 1;
 
 	private JLabel incorrectAnswerLabel = new JLabel("Sorry that answer is not correct, try again.");
 	private JLabel correctAnswerLabel = new JLabel("     Correct!     ");
@@ -132,7 +134,7 @@ public class PuzzlesforSafety extends JFrame {
 		name = new JTextField("<Name>");
 		every = new JLabel("Check in every ");
 		namee = new JLabel("What is your name?");
-		
+
 
 
 		//buttons/fields
@@ -146,6 +148,8 @@ public class PuzzlesforSafety extends JFrame {
 		problemPanel.add(instructionsAnswer);
 		problemPanel.add(answer);
 		problemPanel.add(submit);
+		problemPanel.add(retry);
+		
 		answer.setVisible(false);
 		submit.setVisible(false);
 		retry.setVisible(false);
@@ -219,12 +223,12 @@ public class PuzzlesforSafety extends JFrame {
 		incorrectAnswerLabel.setForeground(Color.RED);
 		problemPanel.add(incorrectAnswerLabel);
 		incorrectAnswerLabel.setVisible(false);
-		
+
 		correctAnswerLabel.setFont(basic3);
 		correctAnswerLabel.setForeground(Color.GREEN);
 		problemPanel.add(correctAnswerLabel);
 		correctAnswerLabel.setVisible(false);
-		
+
 		attemptsRemaining.setFont(basic3);
 		problemPanel.add(attemptsRemaining);
 		attemptsRemaining.setVisible(false);
@@ -235,12 +239,14 @@ public class PuzzlesforSafety extends JFrame {
 	private class StartTrackerListener implements ActionListener {
 
 		public void actionPerformed(ActionEvent e) {
-			
-			
 			time = Integer.parseInt(times.getSelectedItem().toString().trim()) * 60000;
 			buttons.removeAll();
-			//problemPanel.removeAll();
 
+			attempts = 5;
+			attemptsRemaining.setVisible(false);
+			incorrectAnswerLabel.setVisible(false);
+			incorrectAnswerLabel.setText("Sorry that answer is not correct, try again.");
+			
 
 			thanks = new JLabel("Thank you! We Will check on you in " + (time/60000) + " minute(s).");
 			thanks2 = new JLabel("Be Safe!");
@@ -248,13 +254,7 @@ public class PuzzlesforSafety extends JFrame {
 			Font basic2 = new Font("Palatino", Font.BOLD, 50);
 			thanks2.setFont(basic2);
 			thanks.setFont(basic);
-			
-			
 
-			instructionsAnswer.setVisible(true);
-			answer.setVisible(true);
-			submit.setVisible(true);
-			
 			buttons.add(thanks);
 			buttons.add(thanks2);
 
@@ -274,9 +274,14 @@ public class PuzzlesforSafety extends JFrame {
 				attemptsRemaining.setVisible(false);
 				incorrectAnswerLabel.setVisible(false);
 				correctAnswerLabel.setVisible(true);
+				emailSend = false;
+				questionLabel.setText("Thank You! We will contact you again in " + time/60000 + " minute(s).");
+				questionLabel.setFont(new Font("Palatino", Font.BOLD, 18));
+				new Timer().schedule(new showQuestionTask(), time);
+				answer.setText("");
+				problemPanel.setVisible(false);
 			}
 			else {
-				answer.setText("");
 				if (attempts > 1) {
 					incorrectAnswerLabel.setVisible(true);
 					attempts --;
@@ -287,23 +292,20 @@ public class PuzzlesforSafety extends JFrame {
 					}
 				}
 				else {
-					
+
 					try {
 						message = (name.getText().trim() + " has indicated to contact you if they do not respond correctly or in a timely manner to a safety prompt. They have set their location at/to " + (location.getText().trim()) + ". Please check up on " + (name.getText().trim()) + ".");
 						System.out.println(message);
 						System.out.println(inputEmail.getText().toString().trim());
 						Email email = new Email(inputEmail.getText().toString().trim(), "Puzzles for Safety: Automated Message", message);
 						email.send();
-						questionLabel.setText("Email Sent!");
-						
-						problemPanel.removeAll();
-						problemPanel.add(retry);
+						buttons.add(retry);
 						retry.setVisible(true);
-						problemPanel.validate();
-						problemPanel.repaint();
-						
+						questionLabel.setText("Email Sent!");
 						attempts --;
 						attemptsRemaining.setText("Attempts Remaining: " + attempts);
+						emailSend = false;
+
 					} catch (MessagingException e1) {
 						e1.printStackTrace();
 					}
@@ -316,12 +318,8 @@ public class PuzzlesforSafety extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			problemPanel.removeAll();
+			problemPanel.setVisible(false);
 			buttons.removeAll();
-			
-			problemPanel.add(instructionsAnswer);
-			problemPanel.add(instructionsAnswer2);
-			problemPanel.add(instructionsAnswer3);
 
 			//buttons
 			buttons.add(locationMarker);
@@ -339,8 +337,7 @@ public class PuzzlesforSafety extends JFrame {
 			problemPanel.validate();
 			problemPanel.repaint();
 			buttons.validate();
-			buttons.repaint();
-			
+			buttons.repaint();			
 		}
 		
 	}
@@ -348,42 +345,53 @@ public class PuzzlesforSafety extends JFrame {
 	class showQuestionTask extends TimerTask {
 
 		public void run() {
+			problemPanel.setVisible(true);
+			correctAnswerLabel.setVisible(false);
 			instructionsAnswer.setVisible(true);
 			instructionsAnswer2.setVisible(true);
 			instructionsAnswer3.setVisible(true);
 			submit.setVisible(true);
 			answer.setVisible(true);
-			
-			Questions q1 = new Questions("easy");
+
+			Questions q1 = new Questions("easy", alternating);
 			question = q1.getQuestion();
 			correctAnswer = q1.getAnswer();
-			
+
 			buttons.removeAll();
-			
+
 			questionLabel = new JLabel();
 			questionLabel.setText(question);
 			Font basic = new Font("Palatino", Font.BOLD, 50);
 			questionLabel.setFont(basic);
 			buttons.add(questionLabel);
-			
+
 			buttons.validate();
 			buttons.repaint();
-			
+
 			questionLabel.setVisible(true);
-			
+
 			Timer sendEmail = new Timer();
 			sendEmail.schedule(new sendEmailTask(), 10 * 60000);
+			
+			if (alternating == 1) {
+				alternating = 2;
+			}
+			else {
+				alternating = 1;
+			}
 		}
 	}
 
 	class sendEmailTask extends TimerTask {
 
 		public void run() {
-			try {
-				email.send();
-			} 
-			catch (MessagingException e) {
-				e.printStackTrace();
+			if (emailSend) {
+				try {
+					email.send();
+				} 
+				catch (MessagingException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
